@@ -1,0 +1,95 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-200 transition-colors duration-200;
+  }
+}
+
+@layer components {
+  .prose-docs h1 {
+    @apply text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-4;
+  }
+
+  .prose-docs h2 {
+    @apply text-xl font-semibold text-slate-900 dark:text-slate-100 mt-10 mb-3;
+  }
+
+  .prose-docs h3 {
+    @apply text-base font-semibold text-slate-800 dark:text-slate-200 mt-6 mb-2;
+  }
+
+  .prose-docs p {
+    @apply text-slate-600 dark:text-slate-400 leading-relaxed mb-4;
+  }
+
+  .prose-docs ul {
+    @apply list-disc pl-5 space-y-1 text-slate-600 dark:text-slate-400 mb-4;
+  }
+
+  .prose-docs ol {
+    @apply text-slate-600 dark:text-slate-400;
+  }
+
+  .prose-docs li {
+    @apply leading-relaxed;
+  }
+
+  .prose-docs a {
+    @apply text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 underline-offset-2 hover:underline;
+  }
+
+  .prose-docs strong {
+    @apply text-slate-800 dark:text-slate-200;
+  }
+
+  .inline-code {
+    @apply font-mono text-sm bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 px-1.5 py-0.5 rounded;
+  }
+
+  .docs-card {
+    @apply block p-5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md dark:hover:shadow-lg transition-all;
+  }
+
+  .docs-card-title {
+    @apply font-semibold text-slate-900 dark:text-white mb-1;
+  }
+
+  .docs-card-desc {
+    @apply text-sm text-slate-500 dark:text-slate-400;
+  }
+
+  .docs-panel {
+    @apply rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-5;
+  }
+
+  .docs-info-box {
+    @apply mb-6 p-4 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-900/50;
+  }
+
+  .docs-info-box-title {
+    @apply text-sm font-semibold text-indigo-800 dark:text-indigo-300;
+  }
+
+  .docs-info-box-text {
+    @apply text-sm text-indigo-700 dark:text-indigo-400 mt-1;
+  }
+
+  .docs-section-heading {
+    @apply text-base font-semibold text-slate-800 dark:text-slate-200 mt-8 mb-3;
+  }
+
+  .docs-page-title {
+    @apply text-3xl font-bold tracking-tight text-slate-900 dark:text-white mb-2;
+  }
+
+  .docs-page-desc {
+    @apply text-slate-600 dark:text-slate-400 mb-8;
+  }
+}
