@@ -40,8 +40,15 @@ export default function Introduction() {
       </div>
 
       <h2>Base URL</h2>
-      <p>All REST endpoints are relative to your OneChatting server URL:</p>
+      <p>Integration endpoints live under <code className="inline-code">/developer/v1</code> and use resource URLs with standard HTTP methods:</p>
       <CodeBlock code={API_BASE_URL} language="text" title="Base URL" />
+      <ul>
+        <li><code className="inline-code">GET</code> reads a collection or one resource.</li>
+        <li><code className="inline-code">POST</code> creates a resource or sends a message.</li>
+        <li><code className="inline-code">PUT</code> replaces a template.</li>
+        <li><code className="inline-code">DELETE</code> removes a template or campaign.</li>
+        <li>Resource ids belong in the path, for example <code className="inline-code">/developer/v1/chats/&#123;number&#125;/messages</code>.</li>
+      </ul>
 
       <h2>Quick Start</h2>
       <p>
@@ -53,7 +60,7 @@ export default function Introduction() {
       <CodeBlock
         title="Example — Fetch chat list"
         language="bash"
-        code={`curl -X GET "${API_BASE_URL}/developer/message/chat-list?page_no=1&limit=20" \\
+        code={`curl -X GET "${API_BASE_URL}/developer/v1/chats?page_no=1&limit=20" \\
   -H "token: YOUR_DEVELOPER_TOKEN"`}
       />
 

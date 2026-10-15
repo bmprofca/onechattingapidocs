@@ -32,6 +32,7 @@ export const navSections = [
       { label: 'Template Details', path: '/templates/details' },
       { label: 'Create Template', path: '/templates/create' },
       { label: 'Edit Template', path: '/templates/edit' },
+      { label: 'Delete Template', path: '/templates/delete' },
     ],
   },
   {
@@ -212,7 +213,7 @@ export const endpoints = {
   'chat-list': {
     title: 'Chat List',
     method: 'GET',
-    path: '/developer/message/chat-list',
+    path: '/developer/v1/chats',
     auth: 'message',
     description: 'Returns paginated conversations for the authenticated project, with last message preview, unread count, and open case count per contact.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
@@ -252,12 +253,12 @@ export const endpoints = {
   'chat-history': {
     title: 'Chat History',
     method: 'GET',
-    path: '/developer/message/chat-history',
+    path: '/developer/v1/chats/{number}/messages',
+    pathParams: [{ name: 'number', example: '919876543210', description: 'Contact WhatsApp number' }],
     auth: 'message',
     description: 'Fetch message history for a specific contact. Supports cursor pagination via last_id. Template messages include template JSON (with proxied media URLs), component parameters, and a rendered message field.',
     headers: [{ name: 'token', required: true, description: 'User Token' }],
     query: [
-      { name: 'number', type: 'string', required: true, description: 'Contact WhatsApp number' },
       { name: 'last_id', type: 'number', required: false, description: 'Cursor — pass last message id from previous page (0 for first page)' },
       { name: 'limit', type: 'number', required: false, description: 'Max 100 (default: 100)' },
     ],
@@ -281,13 +282,13 @@ export const endpoints = {
   },
   'media-list': {
     title: 'Media List',
-    method: 'POST',
-    path: '/developer/message/media-list',
+    method: 'GET',
+    path: '/developer/v1/media',
     auth: 'message',
     description:
       'Returns paginated incoming and outgoing media files (images, videos, documents, audio, locations, and template header media) for the authenticated project. Filter by media type, search, date range, and optionally restrict to one or more WhatsApp numbers.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
-    body: [
+    query: [
       { name: 'filter', type: 'string', required: false, description: 'Media type filter: all, image, video, document, audio (default: all)' },
       { name: 'page_no', type: 'number', required: false, description: 'Page number (default: 1)' },
       { name: 'limit', type: 'number', required: false, description: 'Items per page, max 50 (default: 10)' },
@@ -297,14 +298,7 @@ export const endpoints = {
       { name: 'number', type: 'string', required: false, description: 'Single WhatsApp number to filter media for that chat only' },
       { name: 'numbers', type: 'array | string', required: false, description: 'One or more WhatsApp numbers (array or comma-separated string). Use with or without number.' },
     ],
-    exampleBodyObject: {
-      filter: 'document',
-      page_no: 1,
-      limit: 10,
-      numbers: ['919876543210'],
-      date_from: '2026-01-01',
-      date_to: '2026-03-01',
-    },
+    exampleQuery: 'filter=document&page_no=1&limit=10&numbers=919876543210&date_from=2026-01-01&date_to=2026-03-01',
     notes: [
       'Omit number and numbers to fetch media across all chats in the project.',
       'Pass number or numbers to return media for specific contact(s) only.',
@@ -352,36 +346,29 @@ export const endpoints = {
   'mark-as-read': {
     title: 'Mark as Read',
     method: 'POST',
-    path: '/developer/message/mark-as-read',
+    path: '/developer/v1/chats/{number}/read',
+    pathParams: [{ name: 'number', example: '919876543210', description: 'Contact WhatsApp number' }],
     auth: 'message',
     description: 'Mark all incoming messages from a contact as read.',
     headers: [{ name: 'token', required: true, description: 'User Token' }],
-    body: [{ name: 'number', type: 'string', required: true, description: 'Contact WhatsApp number' }],
     response: `{ "error": false }`,
   },
   'chat-assign-permission': {
     title: 'Chat Assign Permission',
     method: 'GET',
-    path: '/developer/message/chat-assign-permission',
+    path: '/developer/v1/chats/{number}/assignment',
+    pathParams: [{ name: 'number', example: '919876543210', description: 'WhatsApp number of the chat' }],
     auth: 'message',
     description:
       'Check whether the authenticated user can manage chat assignment. Uses the same rules as the portal: admin, "chat assign access" permission, or currently assigned to the chat. Requires a User Token.',
     headers: [{ name: 'token', required: true, description: 'User Token (not Project Token)' }],
-    query: [
-      {
-        name: 'number',
-        type: 'string',
-        required: false,
-        description: 'Optional WhatsApp number. When provided, includes current assignment context and whether you can unassign that chat.',
-      },
-    ],
     notes: [
       'can_assign is true if you are admin, have chat assign access, the chat is currently assigned to you, OR the chat is unassigned (self-claim allowed).',
       'can_assign_others is true only for admin, chat assign access, or current owner (can transfer to any teammate).',
       'can_self_assign_open is true when the chat has no assignee — you may assign it to yourself without special permission.',
       'can_unassign is true only when the chat is currently assigned to you.',
       'can_manage is true if either can_assign or can_unassign is true.',
-      'assigning is included when number is provided (same shape as socket chat_assigned payload).',
+      'assigning is included for the chat in the path (same shape as socket chat_assigned payload).',
     ],
     response: `{
   "error": false,
@@ -407,18 +394,17 @@ export const endpoints = {
   'chat-assign': {
     title: 'Chat Assign',
     method: 'POST',
-    path: '/developer/message/chat-assign',
+    path: '/developer/v1/chats/{number}/assignment',
+    pathParams: [{ name: 'number', example: '919876543210', description: 'Contact WhatsApp number' }],
     auth: 'message',
     description:
       'Assign a chat to a team member or unassign yourself from a chat. Same permission rules as the portal chat-assign endpoint, plus self-claim of unassigned chats. Requires a User Token. Emits the chat_assigned socket event on success.',
     headers: [{ name: 'token', required: true, description: 'User Token (not Project Token)' }],
     body: [
-      { name: 'number', type: 'string', required: true, description: 'Contact WhatsApp number' },
       { name: 'type', type: 'string', required: true, description: '"assign" or "unassign"' },
       { name: 'target', type: 'string', required: false, description: 'Username to assign to. Required when type is "assign".' },
     ],
     exampleBodyObject: {
-      number: '919876543210',
       type: 'assign',
       target: 'agent1',
     },
@@ -450,7 +436,7 @@ export const endpoints = {
   'send-text': {
     title: 'Send Text Message',
     method: 'POST',
-    path: '/developer/message/send-text-message',
+    path: '/developer/v1/messages/text',
     auth: 'send',
     description: 'Send a text message to a WhatsApp number.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
@@ -475,7 +461,7 @@ export const endpoints = {
   'send-image': {
     title: 'Send Image Message',
     method: 'POST',
-    path: '/developer/message/send-image-message',
+    path: '/developer/v1/messages/image',
     auth: 'send',
     description: 'Send an image with optional caption.',
     body: [
@@ -489,7 +475,7 @@ export const endpoints = {
   'send-video': {
     title: 'Send Video Message',
     method: 'POST',
-    path: '/developer/message/send-video-message',
+    path: '/developer/v1/messages/video',
     auth: 'send',
     body: [
       { name: 'number', type: 'string', required: true },
@@ -502,7 +488,7 @@ export const endpoints = {
   'send-document': {
     title: 'Send Document Message',
     method: 'POST',
-    path: '/developer/message/send-document-message',
+    path: '/developer/v1/messages/document',
     auth: 'send',
     body: [
       { name: 'number', type: 'string', required: true },
@@ -516,7 +502,7 @@ export const endpoints = {
   'send-audio': {
     title: 'Send Audio Message',
     method: 'POST',
-    path: '/developer/message/send-audio-message',
+    path: '/developer/v1/messages/audio',
     auth: 'send',
     body: [
       { name: 'number', type: 'string', required: true },
@@ -529,7 +515,7 @@ export const endpoints = {
   'send-template': {
     title: 'Send Template Message',
     method: 'POST',
-    path: '/developer/message/send-template',
+    path: '/developer/v1/messages/template',
     auth: 'send',
     description: 'Send an approved WhatsApp template message. Marketing and Utility templates use variable parameters in header/body. AUTHENTICATION templates use Meta\'s predefined OTP format — pass the OTP code in body.parameters only; the Copy Code button component is added automatically when required. Wallet balance is checked per template category (marketing, utility, authentication).',
     body: [
@@ -579,7 +565,7 @@ export const endpoints = {
   'template-list': {
     title: 'Template List',
     method: 'GET',
-    path: '/developer/template/template-list',
+    path: '/developer/v1/templates',
     auth: 'template',
     description: 'List WhatsApp templates for your project. Template definitions are loaded from the database (template_json) with header media expanded to proxied URLs ({BASE_DOMAIN}/proxy/templates/...). Requires a Project Token.',
     headers: [{ name: 'token', required: true, description: 'Project Token' }],
@@ -619,12 +605,10 @@ export const endpoints = {
   'template-details': {
     title: 'Template Details',
     method: 'GET',
-    path: '/developer/template/template-details',
+    path: '/developer/v1/templates/{template_id}',
+    pathParams: [{ name: 'template_id', example: 'tmpl_abc123', description: 'Template ID' }],
     auth: 'template',
     description: 'Get a single template by ID. Header image/video/document handles in template JSON are returned as proxied media URLs ({BASE_DOMAIN}/proxy/templates/...) ready for use in send-template header parameters.',
-    query: [
-      { name: 'template_id', type: 'string', required: true, description: 'Template ID' },
-    ],
     response: `{
   "data": {
     "template_id": "...",
@@ -655,7 +639,7 @@ export const endpoints = {
   'create-template': {
     title: 'Create Template',
     method: 'POST',
-    path: '/developer/template/create-template',
+    path: '/developer/v1/templates',
     auth: 'template',
     description: 'Create a new WhatsApp template and submit it to Meta for approval. Header media URLs in the request are downloaded and stored on B2; only filenames are saved in template_json. AUTHENTICATION templates must use Meta\'s predefined format (no custom body text). Requires a Project Token.',
     body: [
@@ -692,17 +676,16 @@ export const endpoints = {
   },
   'edit-template': {
     title: 'Edit Template',
-    method: 'POST',
-    path: '/developer/template/edit-template',
+    method: 'PUT',
+    path: '/developer/v1/templates/{template_id}',
+    pathParams: [{ name: 'template_id', example: 'tmpl_abc123', description: 'Existing template ID' }],
     auth: 'template',
     description: 'Edit an existing template and resubmit to Meta. Media is re-processed to B2. AUTHENTICATION templates are validated against the predefined format. Template status becomes PENDING after edit.',
     body: [
-      { name: 'template_id', type: 'string', required: true, description: 'Existing template ID' },
       { name: 'template', type: 'object', required: true, description: 'Updated template JSON' },
       { name: 'category', type: 'string', required: false, description: 'Override category if needed' },
     ],
     exampleBodyObject: {
-      template_id: 'your_template_id',
       template: {
         name: 'login_otp',
         components: [
@@ -724,10 +707,25 @@ export const endpoints = {
   "template": { /* updated template with proxied media URLs expanded */ }
 }`,
   },
+  'delete-template': {
+    title: 'Delete Template',
+    method: 'DELETE',
+    path: '/developer/v1/templates/{template_id}',
+    pathParams: [{ name: 'template_id', example: 'tmpl_abc123', description: 'Template ID to delete' }],
+    auth: 'template',
+    description: 'Soft-delete a template. Deleted templates no longer appear in the list.',
+    notes: [
+      'Returns 404 if the template does not exist or is already deleted.',
+    ],
+    response: `{
+  "error": false,
+  "msg": "Template deleted successfully"
+}`,
+  },
   'bulk-upsert': {
     title: 'Bulk Upsert Contacts',
     method: 'POST',
-    path: '/developer/contact/bulk-upsert',
+    path: '/developer/v1/contacts/bulk',
     auth: 'send',
     description:
       'Create or update contacts in bulk for the authenticated project. Matching is done by phone number: existing numbers are updated, new numbers are inserted. The request is accepted immediately and processed in a background queue — use the returned job_id to poll status.',
@@ -772,27 +770,25 @@ export const endpoints = {
       'Maximum 10,000 contacts per request.',
       'Processing runs in the background. The HTTP response returns as soon as the job is queued.',
       'New contacts are also assigned to the authenticated user in chat_assigned (same behaviour as create-contact).',
-      'Poll GET /developer/contact/bulk-upsert-status?job_id=... for progress. Job status is retained for about 1 hour.',
+      'Poll GET /developer/v1/contacts/bulk/{job_id} for progress. Job status is retained for about 1 hour.',
     ],
     response: `{
   "error": false,
   "msg": "Bulk contact upsert accepted and is processing in the background",
   "job_id": "abc123xyz...",
   "total": 2,
-  "status_url": "/developer/contact/bulk-upsert-status?job_id=abc123xyz..."
+  "status_url": "/developer/v1/contacts/bulk/abc123xyz..."
 }`,
   },
   'bulk-upsert-status': {
     title: 'Bulk Upsert Status',
     method: 'GET',
-    path: '/developer/contact/bulk-upsert-status',
+    path: '/developer/v1/contacts/bulk/{job_id}',
+    pathParams: [{ name: 'job_id', example: 'abc123xyz', description: 'Job ID returned by bulk upsert' }],
     auth: 'send',
     description:
       'Check the status of a previously queued bulk contact upsert job. Only jobs belonging to the authenticated project can be queried.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
-    query: [
-      { name: 'job_id', type: 'string', required: true, description: 'Job ID returned by bulk-upsert' },
-    ],
     notes: [
       'status values: queued | processing | completed | failed.',
       'errors contains up to 100 sample failure/skip reasons (e.g. missing number).',
@@ -816,7 +812,7 @@ export const endpoints = {
   'campaign-create': {
     title: 'Create Campaign',
     method: 'POST',
-    path: '/developer/campaign/create',
+    path: '/developer/v1/campaigns',
     auth: 'send',
     description:
       'Create a WhatsApp template campaign using phone numbers only. Recipients are processed in the background. Optionally schedule the campaign for a future time (IST).',
@@ -863,7 +859,7 @@ export const endpoints = {
   'campaign-list': {
     title: 'Campaign List',
     method: 'GET',
-    path: '/developer/campaign/list',
+    path: '/developer/v1/campaigns',
     auth: 'send',
     description: 'List campaigns for the authenticated project with pagination and optional status filter.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
@@ -904,13 +900,11 @@ export const endpoints = {
   'campaign-details': {
     title: 'Campaign Details',
     method: 'GET',
-    path: '/developer/campaign/details',
+    path: '/developer/v1/campaigns/{campaign_id}',
+    pathParams: [{ name: 'campaign_id', example: 'abc123', description: 'Campaign ID' }],
     auth: 'send',
     description: 'Fetch a single campaign with recipient counters and estimated cost.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
-    query: [
-      { name: 'campaign_id', type: 'string', required: true, description: 'Campaign ID' },
-    ],
     response: `{
   "error": false,
   "msg": "Campaign data fetched successfully",
@@ -945,12 +939,12 @@ export const endpoints = {
   'campaign-messages': {
     title: 'Campaign Messages',
     method: 'GET',
-    path: '/developer/campaign/messages',
+    path: '/developer/v1/campaigns/{campaign_id}/messages',
+    pathParams: [{ name: 'campaign_id', example: 'abc123', description: 'Campaign ID' }],
     auth: 'send',
     description: 'Paginated list of campaign message rows (per recipient), with optional status filter.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
     query: [
-      { name: 'campaign_id', type: 'string', required: true, description: 'Campaign ID' },
       { name: 'status', type: 'string', required: false, description: 'all | pending | sent | delivered | read | failed (default: all)' },
       { name: 'page_no', type: 'number', required: false, description: 'Page number (default: 1)' },
       { name: 'limit', type: 'number', required: false, description: 'Items per page, max 100 (default: 20)' },
@@ -978,14 +972,12 @@ export const endpoints = {
   },
   'campaign-delete': {
     title: 'Delete Campaign',
-    method: 'POST',
-    path: '/developer/campaign/delete',
+    method: 'DELETE',
+    path: '/developer/v1/campaigns/{campaign_id}',
+    pathParams: [{ name: 'campaign_id', example: 'abc123', description: 'Campaign ID to delete' }],
     auth: 'send',
     description: 'Soft-delete a campaign. Same rules as the portal: campaign must exist and must not already be deleted.',
     headers: [{ name: 'token', required: true, description: 'User Token or Project Token' }],
-    body: [
-      { name: 'campaign_id', type: 'string', required: true, description: 'Campaign ID to delete' },
-    ],
     notes: [
       'Sets is_deleted = 1 and records deleted_by.',
       'Already deleted campaigns return an error.',

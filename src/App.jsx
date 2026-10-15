@@ -84,6 +84,10 @@ export default function App() {
             path="/templates/edit"
             element={<EndpointPage endpointKey="edit-template" />}
           />
+          <Route
+            path="/templates/delete"
+            element={<EndpointPage endpointKey="delete-template" />}
+          />
 
           <Route
             path="/contacts/bulk-upsert"

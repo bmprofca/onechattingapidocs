@@ -55,6 +55,7 @@ export default function EndpointPage({ endpointKey }) {
       )}
 
       <ParamTable title="Headers" params={endpoint.headers || [{ name: 'token', type: 'string', required: true, description: 'Developer token' }]} />
+      {endpoint.pathParams && <ParamTable title="Path Parameters" params={endpoint.pathParams.map((param) => ({ ...param, type: 'string', required: true }))} />}
       {endpoint.query && <ParamTable title="Query Parameters" params={endpoint.query} />}
       {endpoint.body && <ParamTable title="Request Body (JSON)" params={endpoint.body} />}
 
@@ -75,22 +76,34 @@ export default function EndpointPage({ endpointKey }) {
 }
 
 function buildCurlExample(endpoint) {
-  const url = `${API_BASE_URL}${endpoint.path}`;
+  const url = `${API_BASE_URL}${fillPath(endpoint)}`;
   const isSession = endpoint.auth === 'session';
   const headers = isSession
     ? '-H "token: YOUR_SESSION_TOKEN" -H "username: YOUR_USERNAME" -H "Content-Type: application/json"'
     : '-H "token: YOUR_DEVELOPER_TOKEN" -H "Content-Type: application/json"';
 
-  if (endpoint.method === 'GET') {
-    const query = endpoint.query
-      ?.filter((q) => q.required)
-      .map((q) => `${q.name}=...`)
-      .join('&');
+  if (endpoint.method === 'GET' || endpoint.method === 'DELETE') {
+    const query = endpoint.exampleQuery
+      || endpoint.query
+        ?.filter((q) => q.required)
+        .map((q) => `${q.name}=...`)
+        .join('&');
     const qs = query ? `?${query}` : '';
-    return `curl -X GET "${url}${qs}" \\\n  ${headers.split(' -H ').slice(0, isSession ? 3 : 2).join(' -H ')}`;
+    const headerLine = isSession
+      ? '-H "token: YOUR_SESSION_TOKEN" \\\n  -H "username: YOUR_USERNAME"'
+      : '-H "token: YOUR_DEVELOPER_TOKEN"';
+    return `curl -X ${endpoint.method} "${url}${qs}" \\\n  ${headerLine}`;
   }
 
   return `curl -X ${endpoint.method} "${url}" \\\n  ${headers} \\\n  -d '${JSON.stringify(buildExampleBodyObject(endpoint), null, 2)}'`;
+}
+
+function fillPath(endpoint) {
+  let path = endpoint.path;
+  endpoint.pathParams?.forEach((param) => {
+    path = path.replace(`{${param.name}}`, param.example || '...');
+  });
+  return path;
 }
 
 function buildExampleBodyObject(endpoint) {
